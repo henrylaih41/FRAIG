@@ -2,7 +2,7 @@
   FileName     [ cirMgr.h ]
   PackageName  [ cir ]
   Synopsis     [ Define circuit manager ]
-  Author       [ Chung-Yang (Ric) Huang ]
+  Author       [ Yen-Li (Henry) Laih, Chung-Yang (Ric) Huang ]
   Copyright    [ Copyleft(c) 2008-present LaDs(III), GIEE, NTU, Taiwan ]
 ****************************************************************************/
 
@@ -19,36 +19,22 @@ using namespace std;
 #include "cirDef.h"
 
 extern CirMgr *cirMgr;
-//CirMgr A(1,2),B; int a; A();
-// TODO: Define your own data members and member functions
+
 class CirMgr
 {
 public:
-   CirMgr(int gateNum,int AIGn){
-       allGates = new CirGate*[gateNum];
-       for(int i = 0; i < gateNum; i++)
-           allGates[i] = 0;
-       AIGnum = AIGn;
-       Acount = 0;
-       GateNum = gateNum;
-   }
     CirMgr() {};
-   ~CirMgr() {
-       if(allGates != 0) delete [] allGates;
-   }
+   ~CirMgr() {};
 
    // Access functions
    // return '0' if "gid" corresponds to an undefined gate.
-   CirGate* getGate(unsigned gid) const {
-       if(gid >= GateNum) return 0;
-       if(cirMgr -> allGates[gid] == 0) return 0;
-       else{
-           return cirMgr -> allGates[gid];
-       }
-   }
+   CirGate* getGate(int gid);
 
    // Member functions about circuit construction
+    void construct(int);
     bool readCircuit(const string&);
+    // Used when we want to clear the current circuit and free the resource
+    void reset();
     // Member functions about circuit optimization
     void sweep();
     void optimize();
@@ -83,8 +69,8 @@ private:
     int AIGnum;
     int GateNum;
     int Acount;
-    CirGate** allGates = 0; //stores gate object pointer
-    ofstream           *_simLog;
+    CirGate *allGates; //stores gate object pointer
+    ofstream *_simLog;
     
 };
 

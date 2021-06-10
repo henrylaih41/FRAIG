@@ -2,7 +2,7 @@
   FileName     [ cirMgr.cpp ]
   PackageName  [ cir ]
   Synopsis     [ Define cir manager functions ]
-  Author       [ Chung-Yang (Ric) Huang ]
+  Author       [ Yen-Li (Henry), Laih, Chung-Yang (Ric) Huang ]
   Copyright    [ Copyleft(c) 2008-present LaDs(III), GIEE, NTU, Taiwan ]
 ****************************************************************************/
 
@@ -18,36 +18,9 @@
 #include <sstream>
 
 using namespace std;
-
-// TODO: Implement memeber functions for class CirMgr
-
 /*******************************/
 /*   Global variable and enum  */
 /*******************************/
-CirMgr* cirMgr = 0;
-
-enum CirParseError {
-   EXTRA_SPACE,
-   MISSING_SPACE,
-   ILLEGAL_WSPACE,
-   ILLEGAL_NUM,
-   ILLEGAL_IDENTIFIER,
-   ILLEGAL_SYMBOL_TYPE,
-   ILLEGAL_SYMBOL_NAME,
-   MISSING_NUM,
-   MISSING_IDENTIFIER,
-   MISSING_NEWLINE,
-   MISSING_DEF,
-   CANNOT_INVERTED,
-   MAX_LIT_ID,
-   REDEF_GATE,
-   REDEF_SYMBOLIC_NAME,
-   REDEF_CONST,
-   NUM_TOO_SMALL,
-   NUM_TOO_BIG,
-
-   DUMMY_END
-};
 
 /**************************************/
 /*   Static varaibles and functions   */
@@ -58,7 +31,7 @@ static char buf[1024];
 static string errMsg;
 static int errInt;
 static CirGate *errGate;
-
+CirMgr* cirMgr = 0;
 static bool
 parseError(CirParseError err)
 {
@@ -145,7 +118,26 @@ parseError(CirParseError err)
    }
    return false;
 }
+void
+CirMgr::construct(int total){
+   allGates = new CirGate[total]; 
+   GateNum = total;
+}
 
+void
+CirMgr::reset(){
+    delete [] allGates;
+}
+
+CirGate*
+CirMgr::getGate(int gid){
+    if(gid >= GateNum) return 0;
+
+    else {
+        return (cirMgr->allGates+gid);
+    }
+
+}
 /**************************************************************/
 /*   class CirMgr member functions for circuit construction   */
 /**************************************************************/
@@ -153,14 +145,6 @@ bool
 CirMgr::readCircuit(const string& fileName)
 {
     
-    enum parseType{
-        head,
-        Input,
-        Output,
-        AIGType,
-        ISymbol,
-        OSymbol
-    };
     //Variables
     //***********************
     unsigned int PInum = 0;
@@ -176,22 +160,25 @@ CirMgr::readCircuit(const string& fileName)
     parseType type = head;
     CirGate* AIG = 0;
     //***********************
-    
-    
     //Check if file is opened
-    //***********************
     filetoRead.open(fileName);
     if(!filetoRead){
-        cout<<"Cannot open design "<<'\"'<<fileName<<'\"'<<"!!"<<endl;
+        cout << "Cannot open design "<<'\"'<<fileName<<'\"'<<"!!"<<endl;
         return false;
     }
-    //***********************
+
+    /*****************************
+     * refactor everything below, use for loops instead of 
+     * while, the code would be much cleaner. 
+     ******************************/
+
+    /***
     while(getline(filetoRead,row)){
         string unit;
         istringstream RowtoRead(row);
         unsigned int lineCount = 0;
         lineNum++;
-        while(getline(RowtoRead,unit,' ')){
+        while(getline(RowtoRead, unit,' ')){
             int N;
             if(unit == "aag") continue;
             if( lineCount == 0 && unit == "c" ) return true;
@@ -200,7 +187,7 @@ CirMgr::readCircuit(const string& fileName)
                 count == 0;
             }
             if(type != ISymbol && type != OSymbol)
-            myStr2Int(unit,N);
+                myStr2Int(unit,N);
             else{
                 if(lineCount == 0){
                 myStr2Int(unit.substr(1),N);
@@ -297,10 +284,11 @@ CirMgr::readCircuit(const string& fileName)
             }
         }
         if(type == head){
-            cirMgr = new CirMgr(maxIDnum + POnum + 1,AIGnum);
-            CirGate* input = new CirGate(0,0,'C'); //initial Input gate
-            cirMgr -> allGates[0] = input; //store input to list according to ID;
-            type = Input; count = 0;
+
+            // cirMgr = new CirMgr(maxIDnum + POnum + 1,AIGnum);
+            // CirGate* input = new CirGate(0,0,'C'); //initial Input gate
+            // cirMgr -> allGates[0] = input; //store input to list according to ID;
+            // type = Input; count = 0;
         }
         
         if(type == Input && count == PInum){
@@ -347,14 +335,12 @@ CirMgr::readCircuit(const string& fileName)
         if(type == ISymbol && count == PInum){
             type = OSymbol; count = 0;
         }
-        /*for(int i = 0; i < maxIDnum; i++)
-        {
-            cout<< ' '<<cirMgr -> allGates[i] << endl;
-        }*/
+      
     }
     
     filetoRead.close();
     return true;
+    */
 }
 
 /**********************************************************/
@@ -386,7 +372,7 @@ CirMgr::printNetlist()
 {   cout<<endl;
     int count = 0;
     for(int i = 0; i<outputID.size(); i++){
-        DepthS(allGates[outputID[i]],count);
+        DepthS(&allGates[outputID[i]],count);
     }
     CirGate::_globalRef++;
     if(CirGate::_globalRef > 60000) CirGate::_globalRef = 0;
@@ -398,29 +384,29 @@ void CirMgr::DepthS(CirGate* gate,int& count ,ostream& outfile,int toCount){
     
     if(gate -> right_fanin != -1){
         if(gate -> right_fanin % 2 == 0){
-            if(allGates[gate -> right_fanin/2] == 0); ////// 防未定意
-            else if(allGates[gate -> right_fanin/2] -> _ref != gate -> _globalRef)
-                DepthS(allGates[gate -> right_fanin/2],count,outfile,toCount);
+            if(&allGates[gate -> right_fanin/2] == 0); ////// 防未定意
+            else if(allGates[gate -> right_fanin/2]._ref != gate -> _globalRef)
+                DepthS(&allGates[gate->right_fanin/2],count,outfile,toCount);
         }
         else{
-            if(allGates[(gate -> right_fanin - 1)/2] == 0); //////防未定意
-            else if(allGates[(gate -> right_fanin - 1)/2] -> _ref != gate -> _globalRef)
-                DepthS(allGates[(gate -> right_fanin - 1)/2],count,outfile,toCount);
+            if((&allGates[(gate -> right_fanin - 1)/2]) == 0); //////防未定意
+            else if(allGates[(gate -> right_fanin - 1)/2]._ref != gate -> _globalRef)
+                DepthS(&allGates[(gate -> right_fanin - 1)/2],count,outfile,toCount);
         }
         
     }
     if(gate -> left_fanin != -1){
         if(gate -> left_fanin % 2 == 0){
-            if(allGates[gate -> left_fanin/2] == 0);
+            if(&allGates[gate -> left_fanin/2] == 0);
             ////// 以上防未定意
-            else if(allGates[gate -> left_fanin/2] -> _ref != gate -> _globalRef)
-                DepthS(allGates[gate -> left_fanin/2],count,outfile,toCount);
+            else if(allGates[gate -> left_fanin/2]._ref != gate -> _globalRef)
+                DepthS(&allGates[gate -> left_fanin/2],count,outfile,toCount);
         }
         else{
-            if(allGates[(gate -> left_fanin - 1)/2] == 0);
+            if(&allGates[(gate -> left_fanin - 1)/2] == 0);
             ////// 以上防未定意
-            else if(allGates[(gate -> left_fanin - 1)/2] -> _ref != gate -> _globalRef)
-                DepthS(allGates[(gate -> left_fanin - 1)/2],count,outfile,toCount);
+            else if(allGates[(gate -> left_fanin - 1)/2]._ref != gate -> _globalRef)
+                DepthS(&allGates[(gate -> left_fanin - 1)/2],count,outfile,toCount);
         }
     }
     
@@ -442,29 +428,29 @@ void CirMgr::DepthS(CirGate* gate,int& count,int toCount){
     
     if(gate -> right_fanin != -1){
         if(gate -> right_fanin % 2 == 0){
-            if(allGates[gate -> right_fanin/2] == 0); ////// 防未定意
-            else if(allGates[gate -> right_fanin/2] -> _ref != gate -> _globalRef)
-                DepthS(allGates[gate -> right_fanin/2],count,toCount);
+            if(&allGates[gate -> right_fanin/2] == 0); ////// 防未定意
+            else if(allGates[gate -> right_fanin/2]._ref != gate -> _globalRef)
+                DepthS(&allGates[gate -> right_fanin/2],count,toCount);
         }
         else{
-            if(allGates[(gate -> right_fanin - 1)/2] == 0); //////防未定意
-            else if(allGates[(gate -> right_fanin - 1)/2] -> _ref != gate -> _globalRef)
-                DepthS(allGates[(gate -> right_fanin - 1)/2],count,toCount);
+            if(&allGates[(gate -> right_fanin - 1)/2] == 0); //////防未定意
+            else if(allGates[(gate -> right_fanin - 1)/2]._ref != gate -> _globalRef)
+                DepthS(&allGates[(gate -> right_fanin - 1)/2],count,toCount);
         }
 
     }
     if(gate -> left_fanin != -1){
         if(gate -> left_fanin % 2 == 0){
-            if(allGates[gate -> left_fanin/2] == 0);
+            if(&allGates[gate -> left_fanin/2] == 0);
             ////// 以上防未定意
-            else if(allGates[gate -> left_fanin/2] -> _ref != gate -> _globalRef)
-                DepthS(allGates[gate -> left_fanin/2],count,toCount);
+            else if(allGates[gate -> left_fanin/2]._ref != gate -> _globalRef)
+                DepthS(&allGates[gate -> left_fanin/2],count,toCount);
         }
         else{
-            if(allGates[(gate -> left_fanin - 1)/2] == 0);
+            if(&allGates[(gate -> left_fanin - 1)/2] == 0);
             ////// 以上防未定意
-            else if(allGates[(gate -> left_fanin - 1)/2] -> _ref != gate -> _globalRef)
-                DepthS(allGates[(gate -> left_fanin - 1)/2],count,toCount);
+            else if(allGates[(gate -> left_fanin - 1)/2]._ref != gate -> _globalRef)
+                DepthS(&allGates[(gate -> left_fanin - 1)/2],count,toCount);
         }
     }
 
@@ -501,14 +487,14 @@ CirMgr::printFloatGates() const
 {
     /*for(int i = 0; i < GateNum; i++)
     {
-        cout<< ' '<<cirMgr -> allGates[i] << endl;
+        cout<< ' '<<cirMgr -> &allGates[i] << endl;
     }*/
     cout<<"Gates with floating fanin(s) used:";
     for(int i = 0; i< GateNum ; i++){
-        if(allGates[i] != 0){ //某些位置會突然變成0x4 而非 0
-            if((checkFLfanin(cirMgr -> allGates[i] -> left_fanin)
-               || checkFLfanin(cirMgr -> allGates[i] -> right_fanin)) && allGates[i] -> gateType == 'A'){
-                cout<<' '<<allGates[i] -> gateID;
+        if(&allGates[i] != 0){ //某些位置會突然變成0x4 而非 0
+            if((checkFLfanin(cirMgr -> allGates[i].left_fanin)
+               || checkFLfanin(cirMgr -> allGates[i].right_fanin)) && allGates[i].gateType == 'A'){
+                cout<<' '<<allGates[i].gateID;
             }
         }
     }
@@ -516,9 +502,9 @@ CirMgr::printFloatGates() const
     
     cout<<"Gates defined but not used  :";
     for(int i = 0; i< GateNum ; i++){
-        if(cirMgr -> allGates[i] != 0){//某些位置會突然變成0x4 而非 0
-            if(cirMgr -> allGates[i] -> fanoutList.size() == 0 && cirMgr -> allGates[i] -> gateType != 'O'){
-                if(i != 0) cout<<' '<<cirMgr -> allGates[i] -> gateID;
+        if(&cirMgr->allGates[i] != 0){//某些位置會突然變成0x4 而非 0
+            if(cirMgr -> allGates[i].fanoutList.size() == 0 && cirMgr -> allGates[i].gateType != 'O'){
+                if(i != 0) cout<<' '<<cirMgr -> allGates[i].gateID;
             }
         }
     }
@@ -530,7 +516,7 @@ CirMgr::writeAag(ostream& outfile)
     int count = 0;
     if(Acount == 0){
         for(int i = 0; i<outputID.size(); i++){
-            DepthS(allGates[outputID[i]],count,true);
+            DepthS(&allGates[outputID[i]],count,true);
         }
         CirGate::_globalRef++;
         if(CirGate::_globalRef > 60000) CirGate::_globalRef = 0;
@@ -543,7 +529,7 @@ CirMgr::writeAag(ostream& outfile)
         outfile<<getGate(outputID[i]) -> left_fanin <<'\n';
     }
     for(int i = 0; i<outputID.size(); i++){
-        DepthS(allGates[outputID[i]],count,outfile,2);
+        DepthS(&allGates[outputID[i]],count,outfile,2);
     }
     CirGate::_globalRef++;
     if(CirGate::_globalRef > 60000) CirGate::_globalRef = 0;
@@ -565,11 +551,11 @@ bool
 CirMgr::checkFLfanin(int N) const {
     if(N == -1) return true;
     if(N % 2 == 0){
-        if(cirMgr -> allGates[N/2] == 0) return true;
+        if(&cirMgr -> allGates[N/2] == 0) return true;
         else return false;
     }
     else{
-        if(cirMgr -> allGates[(N - 1)/2] == 0) return true;
+        if(&cirMgr -> allGates[(N - 1)/2] == 0) return true;
         else return false;
     }
 }

@@ -10,11 +10,10 @@
 #include "cmdParser.h"
 
 using namespace std;
-
-//----------------------------------------------------------------------
-//    Global cmd Manager
-//----------------------------------------------------------------------
+// Global varialbe resposible for command parsering
 CmdParser* cmdMgr = new CmdParser("fraig> ");
+// Global variable that contains the whole graph and operations functions.
+// allocated in CirReadCmd::exec(const string& option) in cirCmd.cpp
 
 extern bool initCommonCmd();
 extern bool initCirCmd();

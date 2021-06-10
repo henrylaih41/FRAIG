@@ -84,14 +84,13 @@ CirReadCmd::exec(const string& option)
       if (doReplace) {
          cerr << "Note: original circuit is replaced..." << endl;
          curCmd = CIRINIT;
-         delete cirMgr; cirMgr = 0;
+         cirMgr->reset();
       }
       else {
          cerr << "Error: circuit already exists!!" << endl;
          return CMD_EXEC_ERROR;
       }
    }
-   cirMgr = new CirMgr;
 
    if (!cirMgr->readCircuit(fileName)) {
       curCmd = CIRINIT;

@@ -74,7 +74,7 @@ public:
    virtual void help() const = 0;
 
    void setOptCmd(const string& str) { _optCmd = str; }
-   bool checkOptCmd(const string& check) const;  // Removed for TODO...
+   bool checkOptCmd(const string& check) const;  
    const string& getOptCmd() const { return _optCmd; }
 
 protected:

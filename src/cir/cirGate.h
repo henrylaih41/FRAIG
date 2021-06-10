@@ -25,9 +25,7 @@ class CirGate;
 class CirGate
 {
 public:
-    CirGate(int ID,int line,char type,string name = ""): gateID(ID), lineNum(line),_ref(0), left_fanin(-1), right_fanin(-1),gateName(name){
-        gateType = type;
-    }
+   CirGate(){}
    virtual ~CirGate() {}
 
    // Basic access methods
