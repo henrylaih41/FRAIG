@@ -31,7 +31,7 @@ public:
    CirGate* getGate(int gid);
 
    // Member functions about circuit construction
-    void construct(int);
+    void init(int, int);
     bool readCircuit(const string&);
     // Used when we want to clear the current circuit and free the resource
     void reset();
@@ -66,6 +66,7 @@ private:
     vector<int> inputID;
     vector<int> outputID;
     vector<int> AIGtoLinkID;
+    vector<int> *fanOuts;
     int AIGnum;
     int GateNum;
     int Acount;

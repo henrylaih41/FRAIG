@@ -25,9 +25,10 @@ class CirGate;
 class CirGate
 {
 public:
-   CirGate(){}
-   virtual ~CirGate() {}
+   CirGate(){ cout << "constructing" << endl;}
+   ~CirGate(){}
 
+   void setGate(int idx, int line, char symbol, int left=-1, int right=-1);
    // Basic access methods
    string getTypeStr() const { return ""; }
    unsigned getLineNo() const { return 0; }
@@ -40,16 +41,15 @@ public:
    void Fanin(int,int,bool inv = false);
    void Fanout(int,int,bool inv = false);
    virtual bool isAig() const { return false; }
-    
+    vector<int> fanoutList; 
     char gateType;
     static int _globalRef;
-    unsigned int gateID;//don't know if necessary
-    unsigned int lineNum;
+    int gateID;//don't know if necessary
+    int lineNum;
     int _ref;
+    string gateName;
     int left_fanin;
     int right_fanin;
-    string gateName;
-    vector<int> fanoutList;
 };
 
 #endif // CIR_GATE_H

@@ -91,8 +91,10 @@ CirReadCmd::exec(const string& option)
          return CMD_EXEC_ERROR;
       }
    }
+   else
+      cirMgr = new CirMgr();
 
-   if (!cirMgr->readCircuit(fileName)) {
+   if (cirMgr->readCircuit(fileName)) {
       curCmd = CIRINIT;
       delete cirMgr; cirMgr = 0;
       return CMD_EXEC_ERROR;

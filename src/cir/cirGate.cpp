@@ -20,13 +20,20 @@ using namespace std;
 extern CirMgr *cirMgr;
 int CirGate::_globalRef = 1;
 // TODO: Implement memeber functions for class(es) in cirGate.h
-
 /**************************************/
 /*   class CirGate member functions   */
 /**************************************/
+void 
+CirGate::setGate(int id, int line, char symbol, int left, int right){
+    gateID = id;
+    lineNum = line;
+    gateType = symbol;
+    left_fanin = left;
+    right_fanin = right;
+}
+
 void
-CirGate::reportGate() const
-{
+CirGate::reportGate() const {
     stringstream IDs, lineNums;
     IDs << gateID;
     string gateS = IDs.str();
