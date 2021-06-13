@@ -31,7 +31,7 @@ public:
    CirGate* getGate(int gid);
 
    // Member functions about circuit construction
-    void init(int, int);
+    void init(int, int, int);
     bool readCircuit(const string&);
     // Used when we want to clear the current circuit and free the resource
     void reset();

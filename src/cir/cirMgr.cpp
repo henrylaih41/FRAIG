@@ -121,11 +121,11 @@ parseError(CirParseError err) {
     }
     return false;
 }
-void CirMgr::init(int maxIDnum, int POnum) {
-    cout << "Initializing CirMgr " << maxIDnum << ' ' << POnum << endl;
+void CirMgr::init(int maxIDnum, int POnum, int Anum) {
     allGates = new CirGate[maxIDnum + POnum + 1];  //1-indexed
     fanOuts = new vector<int>[maxIDnum + 1];       //1-indexed
     GateNum = maxIDnum + POnum;
+    AIGnum = Anum;
 }
 
 void CirMgr::reset() {
@@ -148,7 +148,7 @@ bool CirMgr::readCircuit(const string &fileName) {
     cout << "Reading " << fileName << endl;
     // Variables
     //***********************
-    int maxIDnum = 0, PInum = 0, Lnum = 0, POnum = 0, AIGnum = 0;
+    int maxIDnum = 0, PInum = 0, Lnum = 0, POnum = 0, Anum = 0;
     int N, left, right, lineNum = 1;
     ifstream filetoRead;
     stringstream ss;
@@ -163,13 +163,12 @@ bool CirMgr::readCircuit(const string &fileName) {
 
     getline(filetoRead, row);  // getting the first row
     ss << row;
-    ss >> row >> maxIDnum >> PInum >> Lnum >> POnum >> AIGnum;
-
+    ss >> row >> maxIDnum >> PInum >> Lnum >> POnum >> Anum;
+    AIGnum = Anum;
     // allocate space for all gates and fanout vectors
-    cirMgr->init(maxIDnum, POnum);  // 1-indexed
+    cirMgr->init(maxIDnum, POnum, Anum);  // 1-indexed
     // Set up Input Gates
     for (int i = 1; i <= PInum; ++i) {
-        cout << i << endl;
         getline(filetoRead, row);  // don't need the information in row
         cirMgr->inputID.push_back(i);
         cirMgr->allGates[i].setGate(i, lineNum, 'I');
@@ -178,7 +177,6 @@ bool CirMgr::readCircuit(const string &fileName) {
 
     // Set up Output Gates
     for (int i = maxIDnum + 1; i <= maxIDnum + POnum; ++i) {
-        cout << i << endl;
         getline(filetoRead, row);
         cirMgr->outputID.push_back(i);
         cirMgr->allGates[i].setGate(i, lineNum, 'O', stoi(row));
@@ -186,7 +184,7 @@ bool CirMgr::readCircuit(const string &fileName) {
     }
 
     // Set up AIG
-    for (int i = 0; i < AIGnum; ++i) {
+    for (int i = 0; i < Anum; ++i) {
         getline(filetoRead, row);
         ss.str(std::string());
         ss.clear();
@@ -338,27 +336,17 @@ void CirMgr::printPOs() const {
 }
 
 void CirMgr::printFloatGates() const {
-    /*for(int i = 0; i < GateNum; i++)
-    {
-        cout<< ' '<<cirMgr -> &allGates[i] << endl;
-    }*/
     cout << "Gates with floating fanin(s) used:";
-    for (int i = 0; i < GateNum; i++) {
-        if (&allGates[i] != 0) {  //某些位置會突然變成0x4 而非 0
-            if ((checkFLfanin(cirMgr->allGates[i].left_fanin) || checkFLfanin(cirMgr->allGates[i].right_fanin)) && allGates[i].gateType == 'A') {
-                cout << ' ' << allGates[i].gateID;
-            }
-        }
+    for (int i = 1; i < GateNum; i++) {
+        if(allGates[i].gateID == -1)
+            cout << ' ' << i;
     }
-    cout << endl;
 
-    cout << "Gates defined but not used  :";
+    cout << "\nGates defined but not used  :";
     for (int i = 0; i < GateNum; i++) {
-        if (&cirMgr->allGates[i] != 0) {  //某些位置會突然變成0x4 而非 0
-            if (cirMgr->allGates[i].fanoutList.size() == 0 && cirMgr->allGates[i].gateType != 'O') {
-                if (i != 0)
-                    cout << ' ' << cirMgr->allGates[i].gateID;
-            }
+        if (cirMgr->allGates[i].fanoutList.size() == 0 && cirMgr->allGates[i].gateType != 'O') {
+            if (i != 0)
+                cout << ' ' << cirMgr->allGates[i].gateID;
         }
     }
 }
@@ -398,18 +386,3 @@ void CirMgr::writeAag(ostream &outfile) {
     }
 }
 
-bool CirMgr::checkFLfanin(int N) const {
-    if (N == -1)
-        return true;
-    if (N % 2 == 0) {
-        if (&cirMgr->allGates[N / 2] == 0)
-            return true;
-        else
-            return false;
-    } else {
-        if (&cirMgr->allGates[(N - 1) / 2] == 0)
-            return true;
-        else
-            return false;
-    }
-}
