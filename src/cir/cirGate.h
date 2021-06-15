@@ -31,12 +31,14 @@ class CirGate {
     int gateID;  //don't know if necessary
     int lineNum;
     int _ref;
+    int inNetList;
     string gateName;
     int left_fanin;
     int right_fanin;
 
     CirGate(){
       gateID = -1;
+      inNetList = 0;
     }
     ~CirGate() {}
     void setGate(int idx, int line, char symbol, int left = -1, int right = -1);
