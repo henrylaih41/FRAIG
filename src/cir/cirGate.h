@@ -26,13 +26,13 @@ class CirGate;
 class CirGate {
    public:
     vector<int> fanoutList;
+    string symbol;
     char gateType;
     static int _globalRef;
     int gateID;  //don't know if necessary
     int lineNum;
     int _ref;
     int inNetList;
-    string gateName;
     int left_fanin;
     int right_fanin;
 

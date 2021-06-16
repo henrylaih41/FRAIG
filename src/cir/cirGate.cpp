@@ -43,13 +43,13 @@ void CirGate::reportGate() const {
     int blankNum = 0;
     blankNum += gateS.length();
     blankNum += lineS.length();
-    if (gateName != "") blankNum += gateName.length() + 2;
+    if (symbol != "") blankNum += symbol.length() + 2;
 
     if (gateType == 'I') {
         cout << "==================================================" << endl;
         cout << "= PI(" << gateID;
-        if (gateName != "")
-            cout << ")\"" << gateName << "\", line " << lineNum;
+        if (symbol != "")
+            cout << ")\"" << symbol << "\", line " << lineNum;
         else
             cout << "), line " << lineNum;
         for (int i = 0; i < 36 - blankNum; i++) cout << ' ';
@@ -70,8 +70,8 @@ void CirGate::reportGate() const {
     } else if (gateType == 'O') {
         cout << "==================================================" << endl;
         cout << "= PO(" << gateID;
-        if (gateName != "")
-            cout << ")\"" << gateName << "\", line " << lineNum;
+        if (symbol != "")
+            cout << ")\"" << symbol << "\", line " << lineNum;
         else
             cout << "), line " << lineNum;
         for (int i = 0; i < 36 - blankNum; i++) cout << ' ';
@@ -106,6 +106,23 @@ void CirGate::Fanin(int firstlevel, int level, bool inv) {
     }
     assert(level >= 0);
     if (level != 0) _ref = _globalRef;
+    if (left_fanin != -1) {
+        if (left_fanin % 2 == 0) {
+            if (cirMgr->getGate(left_fanin / 2) == 0) {
+                for (int i = 0; i < firstlevel - level + 1; i++) cout << ' ' << ' ';
+                cout << "UNDEF " << left_fanin / 2 << endl;
+            } else {
+                cirMgr->getGate(left_fanin / 2)->Fanin(firstlevel, level - 1);
+            }
+        } else {
+            if (cirMgr->getGate((left_fanin - 1) / 2) == 0) {
+                for (int i = 0; i < firstlevel - level + 1; i++) cout << ' ' << ' ';
+                cout << "!UNDEF " << (left_fanin - 1) / 2 << endl;
+            } else {
+                cirMgr->getGate((left_fanin - 1) / 2)->Fanin(firstlevel, level - 1, true);
+            }
+        }
+    }
     if (right_fanin != -1) {
         if (right_fanin % 2 == 0) {
             if (cirMgr->getGate(right_fanin / 2) == 0) {
@@ -124,23 +141,6 @@ void CirGate::Fanin(int firstlevel, int level, bool inv) {
         }
     }
 
-    if (left_fanin != -1) {
-        if (left_fanin % 2 == 0) {
-            if (cirMgr->getGate(left_fanin / 2) == 0) {
-                for (int i = 0; i < firstlevel - level + 1; i++) cout << ' ' << ' ';
-                cout << "UNDEF " << left_fanin / 2 << endl;
-            } else {
-                cirMgr->getGate(left_fanin / 2)->Fanin(firstlevel, level - 1);
-            }
-        } else {
-            if (cirMgr->getGate((left_fanin - 1) / 2) == 0) {
-                for (int i = 0; i < firstlevel - level + 1; i++) cout << ' ' << ' ';
-                cout << "!UNDEF " << (left_fanin - 1) / 2 << endl;
-            } else {
-                cirMgr->getGate((left_fanin - 1) / 2)->Fanin(firstlevel, level - 1, true);
-            }
-        }
-    }
 }
 
 //記得最後一個level若走過 不要紀錄走過 (標記那些fanout過的）
@@ -185,12 +185,17 @@ void CirGate::reportFanout(int level, bool inv) {
 void CirGate::printGate() const {
     if (gateType == 'I') {
         cout << "PI  " << gateID;
-        if (gateName != "") cout << ' ' << '(' << gateName << ')';
+        if (symbol != "") cout << ' ' << '(' << symbol << ')';
         cout << endl;
     } else if (gateType == 'C') {
         cout << "CONST0" << endl;
     } else if (gateType == 'A') {
         cout << "AIG " << gateID << ' ';
+        if(left_fanin % 2) cout << '!';
+        cout << left_fanin / 2 << ' ';
+        if(right_fanin % 2) cout << '!';
+        cout << right_fanin << endl;
+        /*
         if (left_fanin % 2 == 0) {
             if (cirMgr->getGate(left_fanin / 2) == 0) cout << '*';
             cout << left_fanin / 2 << ' ';
@@ -206,22 +211,27 @@ void CirGate::printGate() const {
             cout << '!' << (right_fanin - 1) / 2;
         }
         cout << endl;
+        */
     } else if (gateType == 'O') {
         cout << "PO  " << gateID << ' ';
+        if(left_fanin % 2) cout << '!';
+        cout << left_fanin / 2;
+        if (symbol != "")
+            cout << " (" << symbol << ')';
+        cout << endl;
+        /*
         if (left_fanin % 2 == 0) {
             if (cirMgr->getGate(left_fanin / 2) == 0) cout << '*';
             cout << left_fanin / 2;
-            if (gateName != "")
-                cout << ' ' << '(' << gateName << ')' << endl;
-            else
-                cout << endl;
+            if (symbol != "")
+                cout << ' ' << '(' << symbol << ')';
+            cout << endl;
         } else {
             if (cirMgr->getGate((left_fanin - 1) / 2) == 0) cout << '*';
             cout << '!' << (left_fanin - 1) / 2;
-            if (gateName != "")
-                cout << ' ' << '(' << gateName << ')' << endl;
-            else
-                cout << endl;
-        }
+            if (symbol != "")
+                cout << ' ' << '(' << symbol << ')';
+            cout << endl;
+        }*/
     }
 }

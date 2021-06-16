@@ -194,6 +194,27 @@ bool CirMgr::readCircuit(const string &fileName) {
             fanOuts[right / 2].push_back(N / 2);
         ++lineNum;
     }
+    // Read Symbol
+    CirGate* gate;
+    string token[2];
+    while(getline(filetoRead, row)){
+        ss.str(std::string());
+        ss.clear();
+        ss << row;
+        ss >> token[0] >> token[1];
+        if(token[0][0] == 'i'){
+            allGates[inputID[stoi(token[0].substr(1))]].symbol = token[1];
+        }
+        else if(token[0][0] == 'o'){
+            allGates[outputID[stoi(token[0].substr(1))]].symbol = token[1];
+        }
+        else if(token[0][0] == 'c')
+            break;
+        else{
+            cout << "Symbol format error!" << endl;
+            return 1;
+        }
+    }
 
     return 0;
 }
@@ -310,18 +331,14 @@ void CirMgr::writeAag(ostream &outfile) {
     for (auto i : outputID)
         dfs(i, visited, count, 1, outfile);
 
-    /*
-    for (int i = 0; i < inputID.size(); i++) {
-        if (getGate(inputID[i])->gateName != "") {
-            outfile << 'i' << i << ' ' << getGate(inputID[i])->gateName << '\n';
-        }
+    for (int i = 0; i < inputID.size(); i++){
+        if (allGates[inputID[i]].symbol != "")
+            outfile << 'i' << i << ' ' << allGates[inputID[i]].symbol << '\n';
     }
     for (int i = 0; i < outputID.size(); i++) {
-        if (getGate(outputID[i])->gateName != "") {
-            outfile << 'o' << i << ' ' << getGate(outputID[i])->gateName << '\n';
-        }
+        if (allGates[outputID[i]].symbol != "")
+            outfile << 'o' << i << ' ' << allGates[outputID[i]].symbol << '\n';
     }
-    */
     outfile << "c\n" << "AAG output by Yen-Li (Henry) Laih" << endl;
 }
 
