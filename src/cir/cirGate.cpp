@@ -192,9 +192,9 @@ void CirGate::printGate() const {
     } else if (gateType == 'A') {
         cout << "AIG " << gateID << ' ';
         if(left_fanin % 2) cout << '!';
-        cout << left_fanin / 2 << ' ';
+        cout << left_fanin / 2  << ' ';
         if(right_fanin % 2) cout << '!';
-        cout << right_fanin << endl;
+        cout << right_fanin / 2<< endl;
         /*
         if (left_fanin % 2 == 0) {
             if (cirMgr->getGate(left_fanin / 2) == 0) cout << '*';
