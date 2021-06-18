@@ -10,7 +10,7 @@
 #define MY_HASH_MAP_H
 
 #include <vector>
-
+#include <cassert>
 using namespace std;
 
 // TODO: (Optionally) Implement your own HashMap and Cache classes.
@@ -61,7 +61,8 @@ public:
    };
 
    void init(size_t b) {
-      reset(); _numBuckets = b; _buckets = new vector<HashNode>[b]; }
+      reset(); _numBuckets = b; _buckets = new vector<HashNode>[b]; 
+   }
    void reset() {
       _numBuckets = 0;
       if (_buckets) { delete [] _buckets; _buckets = 0; }
@@ -71,8 +72,23 @@ public:
    }
    size_t numBuckets() const { return _numBuckets; }
 
-   vector<HashNode>& operator [] (size_t i) { return _buckets[i]; }
-   const vector<HashNode>& operator [](size_t i) const { return _buckets[i]; }
+   HashData& operator [] (HashKey k) { 
+      for (auto &node : _buckets[bucketNum(k)]){
+         if(node.first == k)
+            return node.second;
+      }
+      cout << "Hash key not found!" << endl;
+      assert(1 == 2);
+   }
+
+   const HashData& operator [](HashKey k) const {
+      for (auto node : _buckets[bucketNum(k)]){
+         if(node.first == k)
+            return node.second;
+      }
+      cout << "Hash key not found!" << endl;
+      assert(1 == 2);
+   }
 
    // TODO: implement these functions
    //
@@ -88,7 +104,12 @@ public:
    // check if k is in the hash...
    // if yes, return true;
    // else return false;
-   bool check(const HashKey& k) const { return false; }
+   bool check(const HashKey& k) const { 
+      for (auto node : _buckets[bucketNum(k)])
+         if(node.first == k)
+            return true;
+      return false;
+   }
 
    // query if k is in the hash...
    // if yes, replace d with the data in the hash and return true;
@@ -102,7 +123,13 @@ public:
 
    // return true if inserted d successfully (i.e. k is not in the hash)
    // return false is k is already in the hash ==> will not insert
-   bool insert(const HashKey& k, const HashData& d) { return true; }
+   bool insert(const HashKey& k, const HashData& d) { 
+      if(check(k))
+         return false;
+      HashNode node(k, d);
+      _buckets[bucketNum(k)].push_back(node);
+      return true; 
+   }
 
    // return true if removed successfully (i.e. k is in the hash)
    // return fasle otherwise (i.e. nothing is removed)
@@ -112,9 +139,8 @@ private:
    // Do not add any extra data member
    size_t                   _numBuckets;
    vector<HashNode>*        _buckets;
-
    size_t bucketNum(const HashKey& k) const {
-      return (k() % _numBuckets); }
+      return ((size_t)k % _numBuckets); }
 
 };
 
