@@ -71,7 +71,7 @@ class CirMgr {
     vector<int> *fanOuts;
     vector<int> inputID;
     vector<int> outputID;
-    vector<int> AIGtoLinkID;
+    vector<int> dfsList;
 };
 
 #endif  // CIR_MGR_H

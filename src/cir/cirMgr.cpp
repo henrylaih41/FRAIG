@@ -24,7 +24,7 @@ using namespace std;
 /*******************************/
 /*   Global variable and enum  */
 /*******************************/
-CirMgr *cirMgr = 0;
+CirMgr* cirMgr = 0;
 /**************************************/
 /*   Static varaibles and functions   */
 /**************************************/
@@ -32,7 +32,7 @@ static unsigned lineNo = 0;  // in printint, lineNo needs to ++
 static unsigned colNo = 0;   // in printing, colNo needs to ++
 static string errMsg;
 static int errInt;
-static CirGate *errGate;
+static CirGate* errGate;
 
 static bool
 parseError(CirParseError err) {
@@ -122,7 +122,7 @@ parseError(CirParseError err) {
 }
 void CirMgr::init(int maxIDnum, int POnum, int Anum) {
     allGates = new CirGate[maxIDnum + POnum + 1];  // 1-indexed 0 is for const 0
-    fanOuts = new vector<int>[maxIDnum + 1];     
+    fanOuts = new vector<int>[maxIDnum + 1];
     GateNum = maxIDnum + POnum;
     AIGnum = Anum;
     allGates[0].setGate(0, -1, 'C');
@@ -133,15 +133,15 @@ void CirMgr::reset() {
     delete[] fanOuts;
 }
 
-CirGate* CirMgr::getGate(int a){
-    if(a == -1)
+CirGate* CirMgr::getGate(int a) {
+    if (a == -1)
         return 0;
     return allGates + a;
 }
 /**************************************************************/
 /*   class CirMgr member functions for circuit construction   */
 /**************************************************************/
-bool CirMgr::readCircuit(const string &fileName) {
+bool CirMgr::readCircuit(const string& fileName) {
     // Variables
     //***********************
     int maxIDnum = 0, PInum = 0, Lnum = 0, POnum = 0, Anum = 0;
@@ -169,9 +169,9 @@ bool CirMgr::readCircuit(const string &fileName) {
         ss.str(std::string());
         ss.clear();
         ss << row;
-        ss >> N; 
-	    inputID.push_back(N/2);
-        allGates[N/2].setGate(N/2, lineNum, 'I');
+        ss >> N;
+        inputID.push_back(N / 2);
+        allGates[N / 2].setGate(N / 2, lineNum, 'I');
         ++lineNum;
     }
 
@@ -181,7 +181,7 @@ bool CirMgr::readCircuit(const string &fileName) {
         ss.str(std::string());
         ss.clear();
         ss << row;
-        ss >> N; 
+        ss >> N;
         outputID.push_back(i);
         allGates[i].setGate(i, lineNum, 'O', stoi(row));
         fanOuts[stoi(row) / 2].push_back(i);
@@ -205,20 +205,18 @@ bool CirMgr::readCircuit(const string &fileName) {
     // Read Symbol
     CirGate* gate;
     string token[2];
-    while(getline(filetoRead, row)){
+    while (getline(filetoRead, row)) {
         ss.str(std::string());
         ss.clear();
         ss << row;
         ss >> token[0] >> token[1];
-        if(token[0][0] == 'i'){
+        if (token[0][0] == 'i') {
             allGates[inputID[stoi(token[0].substr(1))]].symbol = token[1];
-        }
-        else if(token[0][0] == 'o'){
+        } else if (token[0][0] == 'o') {
             allGates[outputID[stoi(token[0].substr(1))]].symbol = token[1];
-        }
-        else if(token[0][0] == 'c')
+        } else if (token[0][0] == 'c')
             break;
-        else{
+        else {
             cout << "Symbol format error!" << endl;
             return 1;
         }
@@ -255,14 +253,13 @@ void CirMgr::printSummary() const {
     cout << "  Total" << setw(9) << inputID.size() + outputID.size() + AIGnum << endl;
 }
 
-void CirMgr::dfs(int idx, int *visited, int& count, int write, ostream& out) {
+void CirMgr::dfs(int idx, int* visited, int& count, int write, ostream& out) {
     int left, right;
     visited[idx] = 1;
     getFanins(idx, left, right);
-    if(allGates[idx].gateType == 'A')
-        allGates[idx].inNetList = 1;
-
-    if (left != -1 && allGates[left / 2].gateID != -1 && !visited[left / 2]){
+    if (allGates[idx].gateType == 'A')
+        dfsList.push_back(idx);
+    if (left != -1 && allGates[left / 2].gateID != -1 && !visited[left / 2]) {
         dfs(left / 2, visited, count, write, out);
     }
 
@@ -270,12 +267,10 @@ void CirMgr::dfs(int idx, int *visited, int& count, int write, ostream& out) {
         dfs(right / 2, visited, count, write, out);
     }
 
-    if(!write){
+    if (!write) {
         out << "[" << count++ << "] ";
         allGates[idx].printGate();
     }
-    else if(allGates[idx].gateType == 'A')
-        out << idx * 2 << ' ' << left << ' ' << right << '\n';
 }
 
 void CirMgr::printPIs() const {
@@ -296,7 +291,7 @@ void CirMgr::printPOs() const {
 
 void CirMgr::printNetlist() {
     cout << endl;
-    // GateNum + 1 because gates are 1-index 
+    // GateNum + 1 because gates are 1-index
     int visited[GateNum + 1] = {0};
     int count = 0;
     for (size_t i = 0; i < outputID.size(); i++) {
@@ -324,29 +319,34 @@ void CirMgr::printFloatGates() const {
         cout << "\nGates defined but not used  :" << uss.str() << endl;
 }
 
-void CirMgr::writeAag(ostream &outfile) {
+void CirMgr::writeAag(ostream& outfile) {
     int visited[GateNum + 1] = {0};
     int count = 0;
-    outfile << "aag " << GateNum - outputID.size() << ' ' << inputID.size() \
-            << ' ' << 0 << ' ' << outputID.size() << ' ' << AIGnum << '\n';
-
-    for (auto i : inputID)
-        outfile << i * 2 << '\n';
-   
-    for (auto i : outputID)
-        outfile << allGates[i].left_fanin << '\n';
-
     for (auto i : outputID)
         dfs(i, visited, count, 1, outfile);
 
-    for (int i = 0; i < inputID.size(); i++){
+    outfile << "aag " << GateNum - outputID.size() << ' ' << inputID.size()
+            << ' ' << 0 << ' ' << outputID.size() << ' ' << dfsList.size() << '\n';
+
+    for (auto i : inputID)
+        outfile << i * 2 << '\n';
+
+    for (auto i : outputID)
+        outfile << allGates[i].left_fanin << '\n';
+
+    for (auto i : dfsList)
+        cout << i * 2 << ' ' << allGates[i].left_fanin << ' ' << allGates[i].right_fanin << endl;
+
+    for (int i = 0; i < inputID.size(); i++) {
         if (allGates[inputID[i]].symbol != "")
             outfile << 'i' << i << ' ' << allGates[inputID[i]].symbol << '\n';
     }
+
     for (int i = 0; i < outputID.size(); i++) {
         if (allGates[outputID[i]].symbol != "")
             outfile << 'o' << i << ' ' << allGates[outputID[i]].symbol << '\n';
     }
-    outfile << "c\n" << "AAG output by Yen-Li (Henry) Laih" << endl;
-}
 
+    outfile << "c\n"
+            << "AAG output by Yen-Li (Henry) Laih" << endl;
+}
