@@ -211,10 +211,10 @@ bool CirMgr::readCircuit(const string &fileName) {
         ss << row;
         ss >> token[0] >> token[1];
         if(token[0][0] == 'i'){
-            allGates[stoi(token[0].substr(1))].symbol = token[1];
+            allGates[inputID[stoi(token[0].substr(1))]].symbol = token[1];
         }
         else if(token[0][0] == 'o'){
-            allGates[stoi(token[0].substr(1))].symbol = token[1];
+            allGates[outputID[stoi(token[0].substr(1))]].symbol = token[1];
         }
         else if(token[0][0] == 'c')
             break;
@@ -304,23 +304,23 @@ void CirMgr::printNetlist() {
     }
 }
 
-void CirMgr::printFloatGates() const {    
+void CirMgr::printFloatGates() const {
     int left, right;
     stringstream fss, uss;
-    for (int i = 1; i < GateNum; i++) {
-        if((allGates[i].gateID != -1) && (allGates[i].gateType == 'A')){
-           getFanins(i, left, right);
-           if(allGates[left / 2].gateID == -1 || allGates[right / 2].gateID == -1)
+    for (int i = 1; i <= GateNum; i++) {
+        if ((allGates[i].gateID != -1) && (allGates[i].gateType == 'A')) {
+            getFanins(i, left, right);
+            if (allGates[left / 2].gateID == -1 || allGates[right / 2].gateID == -1)
                 fss << ' ' << i;
         }
     }
-    if(fss.str().length())
+    if (fss.str().length())
         cout << "Gates with floating fanin(s):" << fss.str();
-    for (int i = 1; i < GateNum; i++) {
-        if ((allGates[i].gateID != -1) && (fanOuts[i].size() == 0) && (allGates[i].gateType != 'O')) 
-            uss << ' ' << i; 
+    for (int i = 1; i <= GateNum; i++) {
+        if ((allGates[i].gateID != -1) && (fanOuts[i].size() == 0) && (allGates[i].gateType != 'O'))
+            uss << ' ' << i;
     }
-    if(uss.str().length())
+    if (uss.str().length())
         cout << "\nGates defined but not used  :" << uss.str() << endl;
 }
 
