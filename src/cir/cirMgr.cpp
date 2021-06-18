@@ -166,14 +166,22 @@ bool CirMgr::readCircuit(const string &fileName) {
     // Set up Input Gates
     for (int i = 1; i <= PInum; ++i) {
         getline(filetoRead, row);  // don't need the information in row
-        inputID.push_back(i);
-        allGates[i].setGate(i, lineNum, 'I');
+        ss.str(std::string());
+        ss.clear();
+        ss << row;
+        ss >> N; 
+	    inputID.push_back(N/2);
+        allGates[N/2].setGate(N/2, lineNum, 'I');
         ++lineNum;
     }
 
     // Set up Output Gates
     for (int i = maxIDnum + 1; i <= maxIDnum + POnum; ++i) {
         getline(filetoRead, row);
+        ss.str(std::string());
+        ss.clear();
+        ss << row;
+        ss >> N; 
         outputID.push_back(i);
         allGates[i].setGate(i, lineNum, 'O', stoi(row));
         fanOuts[stoi(row) / 2].push_back(i);
@@ -203,10 +211,10 @@ bool CirMgr::readCircuit(const string &fileName) {
         ss << row;
         ss >> token[0] >> token[1];
         if(token[0][0] == 'i'){
-            allGates[inputID[stoi(token[0].substr(1))]].symbol = token[1];
+            allGates[stoi(token[0].substr(1))].symbol = token[1];
         }
         else if(token[0][0] == 'o'){
-            allGates[outputID[stoi(token[0].substr(1))]].symbol = token[1];
+            allGates[stoi(token[0].substr(1))].symbol = token[1];
         }
         else if(token[0][0] == 'c')
             break;
