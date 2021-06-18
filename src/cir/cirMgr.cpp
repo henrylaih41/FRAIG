@@ -221,7 +221,11 @@ bool CirMgr::readCircuit(const string& fileName) {
             return 1;
         }
     }
-
+    int visited[GateNum + 1] = {0};
+    int count = 0; 
+    for (auto i : outputID)
+        dfs(i, visited, count, 1, cout);
+   
     return 0;
 }
 
@@ -253,21 +257,22 @@ void CirMgr::printSummary() const {
     cout << "  Total" << setw(9) << inputID.size() + outputID.size() + AIGnum << endl;
 }
 
-void CirMgr::dfs(int idx, int* visited, int& count, int write, ostream& out) {
+void CirMgr::dfs(int idx, int* visited, int& count, int init_run, ostream& out) {
     int left, right;
     visited[idx] = 1;
     getFanins(idx, left, right);
-    if (allGates[idx].gateType == 'A')
+    if (init_run && allGates[idx].gateType == 'A')
         dfsList.push_back(idx);
+
     if (left != -1 && allGates[left / 2].gateID != -1 && !visited[left / 2]) {
-        dfs(left / 2, visited, count, write, out);
+        dfs(left / 2, visited, count, init_run, out);
     }
 
     if (right != -1 && allGates[right / 2].gateID != -1 && !visited[right / 2]) {
-        dfs(right / 2, visited, count, write, out);
+        dfs(right / 2, visited, count, init_run, out);
     }
 
-    if (!write) {
+    if (!init_run) {
         out << "[" << count++ << "] ";
         allGates[idx].printGate();
     }
@@ -320,10 +325,6 @@ void CirMgr::printFloatGates() const {
 }
 
 void CirMgr::writeAag(ostream& outfile) {
-    int visited[GateNum + 1] = {0};
-    int count = 0;
-    for (auto i : outputID)
-        dfs(i, visited, count, 1, outfile);
 
     outfile << "aag " << GateNum - outputID.size() << ' ' << inputID.size()
             << ' ' << 0 << ' ' << outputID.size() << ' ' << dfsList.size() << '\n';
