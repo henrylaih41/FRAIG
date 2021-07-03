@@ -230,7 +230,7 @@ CirGateCmd::exec(const string& option)
    if (doFanin)
       thisGate->reportFanin(level);
    else if (doFanout)
-      thisGate->reportFanout(level);
+      thisGate->reportFanout(0);
    else
       thisGate->reportGate();
 

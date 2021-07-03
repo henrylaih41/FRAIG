@@ -143,19 +143,14 @@ void CirGate::Fanin(int firstlevel, int level, bool inv) {
 
 }
 
-//記得最後一個level若走過 不要紀錄走過 (標記那些fanout過的）
-
-void CirGate::Fanout(int firstlevel, int level, bool inv) {
-    //cout<<"the level is "<<level<<' ';
-    if (level < 0) return;
-    assert(level >= 0);
-    for (int i = 0; i < firstlevel - level; i++) cout << ' ' << ' ';
-    if (inv) cout << '!';
+void CirGate::Fanout(int level, unordered_set<int> &visited, bool inv) {
+    for (int i = 0; i < level; i++) cout << "  ";
     if (gateType == 'O') {
         cout << "PO " << gateID << endl;
     } else if (gateType == 'A') {
+        if(inv) cout << '!';
         cout << "AIG " << gateID;
-        if (_ref == _globalRef && level != 0) {
+        if(visited.find(gateID) != visited.end()){
             cout << " (*)" << endl;
             return;
         }
@@ -163,23 +158,17 @@ void CirGate::Fanout(int firstlevel, int level, bool inv) {
     } else if (gateType == 'I') {
         cout << "PI " << gateID << endl;
     }
-    assert(level >= 0);
-    if (level != 0 && fanoutList.size() != 0) _ref = _globalRef;
-    for (int i = 0; i < fanoutList.size(); i++) {
-        if (fanoutList[i] % 2 == 0) {
-            cirMgr->getGate(fanoutList[i] / 2)->Fanout(firstlevel, level - 1);
-        } else {
-            cirMgr->getGate(fanoutList[i] / 2)->Fanout(firstlevel, level - 1, true);
-        }
+    visited.insert(gateID);
+    for (int outs : cirMgr->fanOuts[gateID]) {
+        bool inv = false;
+        if(outs % 2) inv = true;
+        cirMgr->getGate(outs / 2)->Fanout(level+1, visited, inv);
     }
 }
 
-void CirGate::reportFanout(int level, bool inv) {
-    assert(level >= 0);
-    CirGate buf = *this;
-    buf.Fanout(level, level, inv);
-    _globalRef++;
-    if (_globalRef > 60000) _globalRef = 0;
+void CirGate::reportFanout(int level) {
+    unordered_set<int> visited;
+    this->Fanout(level, visited);
 }
 
 void CirGate::printGate() const {
@@ -187,31 +176,19 @@ void CirGate::printGate() const {
         cout << "PI  " << gateID;
         if (symbol != "") cout << ' ' << '(' << symbol << ')';
         cout << endl;
+        
     } else if (gateType == 'C') {
         cout << "CONST0" << endl;
+
     } else if (gateType == 'A') {
         cout << "AIG " << gateID << ' ';
-        if(left_fanin % 2) cout << '!';
+        if(cirMgr->getGate(left_fanin / 2)->gateID == -1) cout << '*';
+        else if(left_fanin % 2) cout << '!';
         cout << left_fanin / 2  << ' ';
-        if(right_fanin % 2) cout << '!';
+        if(cirMgr->getGate(right_fanin / 2)->gateID == -1) cout << '*';
+        else if(right_fanin % 2) cout << '!';
         cout << right_fanin / 2<< endl;
-        /*
-        if (left_fanin % 2 == 0) {
-            if (cirMgr->getGate(left_fanin / 2) == 0) cout << '*';
-            cout << left_fanin / 2 << ' ';
-        } else {
-            if (cirMgr->getGate((left_fanin - 1) / 2) == 0) cout << '*';
-            cout << '!' << (left_fanin - 1) / 2 << ' '; 
-        }
-        if (right_fanin % 2 == 0) {
-            if (cirMgr->getGate(right_fanin / 2) == 0) cout << '*';
-            cout << right_fanin / 2; 
-        } else {
-            if (cirMgr->getGate((right_fanin - 1) / 2) == 0) cout << '*';
-            cout << '!' << (right_fanin - 1) / 2;
-        }
-        cout << endl;
-        */
+      
     } else if (gateType == 'O') {
         cout << "PO  " << gateID << ' ';
         if(left_fanin % 2) cout << '!';
@@ -219,19 +196,5 @@ void CirGate::printGate() const {
         if (symbol != "")
             cout << " (" << symbol << ')';
         cout << endl;
-        /*
-        if (left_fanin % 2 == 0) {
-            if (cirMgr->getGate(left_fanin / 2) == 0) cout << '*';
-            cout << left_fanin / 2;
-            if (symbol != "")
-                cout << ' ' << '(' << symbol << ')';
-            cout << endl;
-        } else {
-            if (cirMgr->getGate((left_fanin - 1) / 2) == 0) cout << '*';
-            cout << '!' << (left_fanin - 1) / 2;
-            if (symbol != "")
-                cout << ' ' << '(' << symbol << ')';
-            cout << endl;
-        }*/
     }
 }

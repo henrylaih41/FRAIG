@@ -184,7 +184,7 @@ bool CirMgr::readCircuit(const string& fileName) {
         ss >> N;
         outputID.push_back(i);
         allGates[i].setGate(i, lineNum, 'O', stoi(row));
-        fanOuts[stoi(row) / 2].push_back(i);
+        fanOuts[stoi(row) / 2].push_back(i*2);
         ++lineNum;
     }
 
@@ -195,15 +195,15 @@ bool CirMgr::readCircuit(const string& fileName) {
         ss.clear();
         ss << row;
         ss >> N >> left >> right;
+        assert(N % 2 == 0);
         allGates[N / 2].setGate(N / 2, lineNum, 'A', left, right);
         if (left >= 2)
-            fanOuts[left / 2].push_back(N / 2);
+            fanOuts[left / 2].push_back(N + left % 2);
         if (right >= 2)
-            fanOuts[right / 2].push_back(N / 2);
+            fanOuts[right / 2].push_back(N + right % 2);
         ++lineNum;
     }
     // Read Symbol
-    CirGate* gate;
     string token[2];
     while (getline(filetoRead, row)) {
         ss.str(std::string());
@@ -261,9 +261,7 @@ void CirMgr::dfs(int idx, int* visited, int& count, int init_run, ostream& out) 
     int left, right;
     visited[idx] = 1;
     getFanins(idx, left, right);
-    if (init_run && allGates[idx].gateType == 'A')
-        dfsList.push_back(idx);
-
+   
     if (left != -1 && allGates[left / 2].gateID != -1 && !visited[left / 2]) {
         dfs(left / 2, visited, count, init_run, out);
     }
@@ -271,6 +269,9 @@ void CirMgr::dfs(int idx, int* visited, int& count, int init_run, ostream& out) 
     if (right != -1 && allGates[right / 2].gateID != -1 && !visited[right / 2]) {
         dfs(right / 2, visited, count, init_run, out);
     }
+    
+    if (init_run && allGates[idx].gateType == 'A')
+        dfsList.push_back(idx);
 
     if (!init_run) {
         out << "[" << count++ << "] ";
@@ -338,12 +339,12 @@ void CirMgr::writeAag(ostream& outfile) {
     for (auto i : dfsList)
         cout << i * 2 << ' ' << allGates[i].left_fanin << ' ' << allGates[i].right_fanin << endl;
 
-    for (int i = 0; i < inputID.size(); i++) {
+    for (size_t i = 0; i < inputID.size(); i++) {
         if (allGates[inputID[i]].symbol != "")
             outfile << 'i' << i << ' ' << allGates[inputID[i]].symbol << '\n';
     }
 
-    for (int i = 0; i < outputID.size(); i++) {
+    for (size_t i = 0; i < outputID.size(); i++) {
         if (allGates[outputID[i]].symbol != "")
             outfile << 'o' << i << ' ' << allGates[outputID[i]].symbol << '\n';
     }

@@ -63,7 +63,6 @@ class CirMgr {
     // utils
     void getFanins(int idx, int& left, int& right) const;
 
-   private:
     int AIGnum;
     int GateNum;
     CirGate *allGates;  //stores gate object pointer
