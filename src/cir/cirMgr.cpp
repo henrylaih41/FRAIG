@@ -131,11 +131,16 @@ void CirMgr::init(int maxIDnum, int POnum, int Anum) {
 void CirMgr::reset() {
     delete[] allGates;
     delete[] fanOuts;
+    inputID.clear();
+    outputID.clear();
+    dfsList.clear();
 }
 
 CirGate* CirMgr::getGate(int a) {
-    if (a == -1)
+    if (a < 0 || a > GateNum)
         return 0;
+    if (allGates[a].gateID == -1)
+    	return 0; 
     return allGates + a;
 }
 /**************************************************************/
@@ -144,6 +149,7 @@ CirGate* CirMgr::getGate(int a) {
 bool CirMgr::readCircuit(const string& fileName) {
     // Variables
     //***********************
+    vector<pair<int, int> > to_push_fanouts;
     int maxIDnum = 0, PInum = 0, Lnum = 0, POnum = 0, Anum = 0;
     int N, left, right, lineNum = 1;
     ifstream filetoRead;
@@ -183,8 +189,8 @@ bool CirMgr::readCircuit(const string& fileName) {
         ss << row;
         ss >> N;
         outputID.push_back(i);
-        allGates[i].setGate(i, lineNum, 'O', stoi(row));
-        fanOuts[stoi(row) / 2].push_back(i*2);
+        allGates[i].setGate(i, lineNum, 'O', N);
+	to_push_fanouts.push_back(make_pair(N/2, i*2+N%2));
         ++lineNum;
     }
 
@@ -220,6 +226,10 @@ bool CirMgr::readCircuit(const string& fileName) {
             cout << "Symbol format error!" << endl;
             return 1;
         }
+    }
+    // push output to its input gate fanouts (late push to match ref-fraig)
+    for (auto p : to_push_fanouts){
+	fanOuts[p.first].push_back(p.second);
     }
     int visited[GateNum + 1] = {0};
     int count = 0; 
@@ -258,6 +268,7 @@ void CirMgr::printSummary() const {
 }
 
 void CirMgr::dfs(int idx, int* visited, int& count, int init_run, ostream& out) {
+    if(idx < 0 || idx > GateNum) return;
     int left, right;
     visited[idx] = 1;
     getFanins(idx, left, right);

@@ -143,32 +143,39 @@ void CirGate::Fanin(int firstlevel, int level, bool inv) {
 
 }
 
-void CirGate::Fanout(int level, unordered_set<int> &visited, bool inv) {
+void CirGate::Fanout(int max_level, int level, unordered_set<int> &visited, bool inv) {
+    if(level > max_level) return; 
     for (int i = 0; i < level; i++) cout << "  ";
     if (gateType == 'O') {
+        if(inv) cout << '!';
         cout << "PO " << gateID << endl;
+	return;
     } else if (gateType == 'A') {
         if(inv) cout << '!';
         cout << "AIG " << gateID;
         if(visited.find(gateID) != visited.end()){
-            cout << " (*)" << endl;
+            if(level < max_level) cout << " (*)";
+	    cout  << endl;
             return;
         }
         cout << endl;
     } else if (gateType == 'I') {
         cout << "PI " << gateID << endl;
     }
-    visited.insert(gateID);
-    for (int outs : cirMgr->fanOuts[gateID]) {
+    
+    if(level < max_level) visited.insert(gateID);
+    vector<int> fouts = cirMgr->fanOuts[gateID];
+    sort(fouts.begin(), fouts.end());
+    for (int outs : fouts) {
         bool inv = false;
         if(outs % 2) inv = true;
-        cirMgr->getGate(outs / 2)->Fanout(level+1, visited, inv);
+        cirMgr->getGate(outs / 2)->Fanout(max_level, level+1, visited, inv);
     }
 }
 
 void CirGate::reportFanout(int level) {
     unordered_set<int> visited;
-    this->Fanout(level, visited);
+    this->Fanout(level, 0, visited);
 }
 
 void CirGate::printGate() const {
@@ -182,10 +189,15 @@ void CirGate::printGate() const {
 
     } else if (gateType == 'A') {
         cout << "AIG " << gateID << ' ';
-        if(cirMgr->getGate(left_fanin / 2)->gateID == -1) cout << '*';
+
+	CirGate* left_gate = cirMgr->getGate(left_fanin / 2);
+	CirGate* right_gate = cirMgr->getGate(right_fanin / 2);
+
+        if(left_gate == 0 or left_gate->gateID == -1) cout << '*';
         else if(left_fanin % 2) cout << '!';
         cout << left_fanin / 2  << ' ';
-        if(cirMgr->getGate(right_fanin / 2)->gateID == -1) cout << '*';
+	
+        if(right_gate == 0 or right_gate->gateID == -1) cout << '*';
         else if(right_fanin % 2) cout << '!';
         cout << right_fanin / 2<< endl;
       

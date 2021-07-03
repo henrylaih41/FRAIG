@@ -53,7 +53,7 @@ class CirGate {
     void reportFanin(int level, bool inv = false);
     void reportFanout(int level);
     void Fanin(int, int, bool inv = false);
-    void Fanout(int, unordered_set <int>&, bool inv = false);
+    void Fanout(int, int, unordered_set <int>&, bool inv = false);
     virtual bool isAig() const { return false; }
 };
 
