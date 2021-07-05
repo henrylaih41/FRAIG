@@ -26,20 +26,21 @@ class CirGate;
 // TODO: Define your own data members and member functions, or classes
 class CirGate {
    public:
-    vector<int> fanoutList;
-    string symbol;
+    bool in_dfs;
     char gateType;
-    static int _globalRef;
     int gateID;  //don't know if necessary
     int lineNum;
     int _ref;
-    int inNetList;
     int left_fanin;
     int right_fanin;
+    //vector<int> fanoutList;
+    string symbol;
 
     CirGate(){
-      gateID = -1;
-      inNetList = 0;
+      gateType = 'U';
+      in_dfs = 0;
+      left_fanin = -1; // to induce segfault if accessing undefined gate
+      right_fanin = -1;
     }
     ~CirGate() {}
     void setGate(int idx, int line, char symbol, int left = -1, int right = -1);

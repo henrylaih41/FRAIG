@@ -19,7 +19,7 @@ using namespace std;
 /*******************************/
 /*   Global variable and enum  */
 /*******************************/
-
+extern CirMgr* cirMgr; 
 /**************************************/
 /*   Static varaibles and functions   */
 /**************************************/
@@ -31,16 +31,54 @@ using namespace std;
 // DFS list should NOT be changed
 // UNDEF, float and unused list may be changed
 void
-CirMgr::sweep()
-{
+CirMgr::sweep(){
+  for(size_t i = 1; i <= GateNum; ++i){
+    // only sweep UNDEF or AIG gates
+    if(allGates[i].in_dfs == 0 && (allGates[i].gateType == 'U' || allGates[i].gateType == 'A')){
+      sweepGate(allGates+i);
+    }
+  } 
+}
+
+void
+CirMgr::sweepGate(CirGate* gate){
+  cout << "Sweeping: ";
+
+  // maintain CirMgr invariants
+  // UNDEF gate
+  if(gate->gateType == 'U'){
+    cout << "UNDEF";
+  }
+  else{
+    cout << "AIG";
+    // remove left right fanouts
+    vector<size_t> *out;
+    size_t remove_id;
+    out = &fanOuts[gate->left_fanin / 2];
+    remove_id = gate->gateID*2 + gate->left_fanin % 2;
+    out->erase(find(out->begin(), out->end(), remove_id));
+    out = &fanOuts[gate->right_fanin / 2];
+    remove_id = gate->gateID*2 + gate->right_fanin % 2;
+    out->erase(find(out->begin(), out->end(), remove_id));
+    cirMgr->AIGnum--;
+  }
+
+  cout << '(' << gate->gateID << ')' << " removed..." << endl;
+
+  // clear the gate
+  gate->gateType = 'U';
+  gate->left_fanin = -1;
+  gate->right_fanin = -1;
+  //fanOuts[gate->gateID].clear();
+
 }
 
 // Recursively simplifying from POs;
 // _dfsList needs to be reconstructed afterwards
 // UNDEF gates may be delete if its fanout becomes empty...
 void
-CirMgr::optimize()
-{
+CirMgr::optimize(){
+
 }
 
 /***************************************************/
