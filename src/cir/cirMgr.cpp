@@ -121,10 +121,10 @@ parseError(CirParseError err) {
     return false;
 }
 void CirMgr::init(int maxIDnum, int POnum, int Anum) {
-    allGates = new CirGate[maxIDnum + POnum + 1];  // 1-indexed 0 is for const 0
-    fanOuts = new vector<int>[maxIDnum + 1];
     GateNum = maxIDnum + POnum;
     AIGnum = Anum;
+    allGates = new CirGate[GateNum + 1];  // 1-indexed 0 is for const 0
+    fanOuts = new vector<int>[maxIDnum + 1];
     allGates[0].setGate(0, -1, 'C');
 }
 
@@ -143,6 +143,7 @@ CirGate* CirMgr::getGate(int a) {
     	return 0; 
     return allGates + a;
 }
+
 /**************************************************************/
 /*   class CirMgr member functions for circuit construction   */
 /**************************************************************/
@@ -190,7 +191,7 @@ bool CirMgr::readCircuit(const string& fileName) {
         ss >> N;
         outputID.push_back(i);
         allGates[i].setGate(i, lineNum, 'O', N);
-	to_push_fanouts.push_back(make_pair(N/2, i*2+N%2));
+    	to_push_fanouts.push_back(make_pair(N/2, i*2+N%2));
         ++lineNum;
     }
 
@@ -228,29 +229,18 @@ bool CirMgr::readCircuit(const string& fileName) {
         }
     }
     // push output to its input gate fanouts (late push to match ref-fraig)
-    for (auto p : to_push_fanouts){
-	fanOuts[p.first].push_back(p.second);
-    }
+    for (auto p : to_push_fanouts)
+	    fanOuts[p.first].push_back(p.second);
+
     int visited[GateNum + 1] = {0};
-    int count = 0; 
+    int count = 0;
+    // construct dfsList 
     for (auto i : outputID)
         dfs(i, visited, count, 1, cout);
    
     return 0;
 }
 
-/**********************************************************/
-/*   class CirMgr member functions for circuit printing   */
-/**********************************************************/
-/*********************
-Circuit Statistics
-==================
-  PI          20
-  PO          12
-  AIG        130
-------------------
-  Total      162
-*********************/
 void CirMgr::getFanins(int idx, int& left, int& right) const {
     assert(idx != -1);
     left = allGates[idx].left_fanin;

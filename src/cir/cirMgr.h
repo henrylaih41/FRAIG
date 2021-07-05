@@ -55,22 +55,24 @@ class CirMgr {
     void printFECPairs() const;
     void writeAag(ostream &);
     void writeGate(ostream &, CirGate *) const;
-    void dfs(int, int *, int&, int write = 0, ostream& out = cout);
-    void DepthS(CirGate *, int &, int toCount = 0);
-    void DepthS(CirGate *, int &, ostream &, int toCount = 0);
-    bool checkFLfanin(int n) const;
+    void dfs(int, int *, int&, int init_run = 0, ostream& out = cout);
     
     // utils
     void getFanins(int idx, int& left, int& right) const;
-
+    // The whole circuit is stored as an array of gates, 
+    // where each gates connects to two input, left and right
+    // and output stored in fanOuts[gateID]
     int AIGnum;
     int GateNum;
-    CirGate *allGates;  //stores gate object pointer
-    ofstream *_simLog;
-    vector<int> *fanOuts;
-    vector<int> inputID;
-    vector<int> outputID;
-    vector<int> dfsList;
+    // uninitialize gates has gateID = -1
+    // stores the gate objects, 0 is constant 0.
+    CirGate *allGates;  
+    ofstream *_simLog; 
+    vector<int> *fanOuts; // fanOuts[gateID] is the output of gateID, format: gateID*2 + inv
+    vector<int> inputID;  // format: gateID
+    vector<int> outputID;  // format: gateID
+    vector<int> dfsList;  // format: gateID
+
 };
 
 #endif  // CIR_MGR_H

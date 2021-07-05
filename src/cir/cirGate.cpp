@@ -20,7 +20,7 @@
 
 using namespace std;
 
-extern CirMgr *cirMgr;
+extern CirMgr* cirMgr;
 int CirGate::_globalRef = 1;
 // TODO: Implement memeber functions for class(es) in cirGate.h
 /**************************************/
@@ -80,13 +80,131 @@ void CirGate::reportGate() const {
     }
 }
 void CirGate::reportFanin(int level, bool inv) {
-    CirGate buf = *this;
-    buf.Fanin(level, level, inv);
-    _globalRef++;
-    if (_globalRef > 60000) _globalRef = 0;
+    unordered_set<int> visited;
+    this->fanin(level, 0, visited);
 }
 
-void CirGate::Fanin(int firstlevel, int level, bool inv) {
+void CirGate::fanin(int max_level, int level, unordered_set<int>& visited, bool inv) {
+    if (level > max_level) return;
+    // printinf infos
+    for (int i = 0; i < level; i++) cout << "  "; 
+    if (inv) cout << '!';
+    if (gateType == 'O') {
+        cout << "PO " << gateID << endl;
+    } else if (gateType == 'A') {
+        cout << "AIG " << gateID;
+        if (visited.find(gateID) != visited.end()) {
+            if (level < max_level) cout << " (*)";
+            cout << endl;
+            return;
+        }
+        cout << endl;
+    } else if (gateType == 'I') {
+        cout << "PI " << gateID << endl;
+    }
+
+    if (level < max_level) visited.insert(gateID);
+
+    if(left_fanin != -1){
+        CirGate* left_gate = cirMgr->getGate(left_fanin / 2);
+        if(left_gate == 0){
+            for (int i = 0; i < level; i++) cout << "  "; 
+            cout << "UNDEF " << left_fanin / 2 << endl;
+        }
+        else{
+            left_gate->fanin(max_level, level+1, visited, left_fanin % 2);
+        }
+    }
+
+    if(right_fanin != -1){
+        CirGate* right_gate = cirMgr->getGate(right_fanin / 2);
+        if(right_gate == 0){
+            for (int i = 0; i < level; i++) cout << "  "; 
+            cout << "UNDEF " << right_fanin / 2 << endl;
+        }
+        else{
+            right_gate->fanin(max_level, level+1, visited, right_fanin % 2);
+        }
+    }
+}
+
+void CirGate::fanout(int max_level, int level, unordered_set<int>& visited, bool inv) {
+    if (level > max_level) return;
+    for (int i = 0; i < level; i++) cout << "  ";
+    if (gateType == 'O') {
+        if (inv) cout << '!';
+        cout << "PO " << gateID << endl;
+        return;
+    } else if (gateType == 'A') {
+        if (inv) cout << '!';
+        cout << "AIG " << gateID;
+        // fanout printed, so we return
+        if (visited.find(gateID) != visited.end()) {
+            if (level < max_level) cout << " (*)";
+            cout << endl;
+            return;
+        }
+        cout << endl;
+    } else if (gateType == 'I') {
+        cout << "PI " << gateID << endl;
+    }
+
+    // if level == max_level, the fanout are not printed
+    // so we don't mark it 
+    if (level < max_level) visited.insert(gateID);
+    // Sorted to match ref
+    vector<int> fouts = cirMgr->fanOuts[gateID];
+    sort(fouts.begin(), fouts.end());
+    for (int outs : fouts) {
+        bool inv = false;
+        if (outs % 2) inv = true;
+        cirMgr->getGate(outs / 2)->fanout(max_level, level + 1, visited, inv);
+    }
+}
+
+void CirGate::reportFanout(int level) {
+    unordered_set<int> visited;
+    this->fanout(level, 0, visited);
+}
+
+void CirGate::printGate() const {
+    if (gateType == 'I') {
+        cout << "PI  " << gateID;
+        if (symbol != "") cout << ' ' << '(' << symbol << ')';
+        cout << endl;
+
+    } else if (gateType == 'C') {
+        cout << "CONST0" << endl;
+
+    } else if (gateType == 'A') {
+        cout << "AIG " << gateID << ' ';
+
+        CirGate* left_gate = cirMgr->getGate(left_fanin / 2);
+        CirGate* right_gate = cirMgr->getGate(right_fanin / 2);
+
+        if (left_gate == 0 or left_gate->gateID == -1)
+            cout << '*';
+        else if (left_fanin % 2)
+            cout << '!';
+        cout << left_fanin / 2 << ' ';
+
+        if (right_gate == 0 or right_gate->gateID == -1)
+            cout << '*';
+        else if (right_fanin % 2)
+            cout << '!';
+        cout << right_fanin / 2 << endl;
+
+    } else if (gateType == 'O') {
+        cout << "PO  " << gateID << ' ';
+        if (left_fanin % 2) cout << '!';
+        cout << left_fanin / 2;
+        if (symbol != "")
+            cout << " (" << symbol << ')';
+        cout << endl;
+    }
+}
+/*
+void CirGate::fanin(int firstlevel, int level, bool inv) {
     //cout<<"the level is "<<level<<' ';
     if (level < 0) return;
     assert(level >= 0);
@@ -112,14 +230,14 @@ void CirGate::Fanin(int firstlevel, int level, bool inv) {
                 for (int i = 0; i < firstlevel - level + 1; i++) cout << ' ' << ' ';
                 cout << "UNDEF " << left_fanin / 2 << endl;
             } else {
-                cirMgr->getGate(left_fanin / 2)->Fanin(firstlevel, level - 1);
+                cirMgr->getGate(left_fanin / 2)->fanin(firstlevel, level - 1);
             }
         } else {
             if (cirMgr->getGate((left_fanin - 1) / 2) == 0) {
                 for (int i = 0; i < firstlevel - level + 1; i++) cout << ' ' << ' ';
                 cout << "!UNDEF " << (left_fanin - 1) / 2 << endl;
             } else {
-                cirMgr->getGate((left_fanin - 1) / 2)->Fanin(firstlevel, level - 1, true);
+                cirMgr->getGate((left_fanin - 1) / 2)->fanin(firstlevel, level - 1, true);
             }
         }
     }
@@ -129,7 +247,7 @@ void CirGate::Fanin(int firstlevel, int level, bool inv) {
                 for (int i = 0; i < firstlevel - level + 1; i++) cout << ' ' << ' ';
                 cout << "UNDEF " << right_fanin / 2 << endl;
             } else {
-                cirMgr->getGate(right_fanin / 2)->Fanin(firstlevel, level - 1);
+                cirMgr->getGate(right_fanin / 2)->fanin(firstlevel, level - 1);
             }
         } else {
             if (cirMgr->getGate((right_fanin - 1) / 2) == 0) {
@@ -140,73 +258,4 @@ void CirGate::Fanin(int firstlevel, int level, bool inv) {
             }
         }
     }
-
-}
-
-void CirGate::Fanout(int max_level, int level, unordered_set<int> &visited, bool inv) {
-    if(level > max_level) return; 
-    for (int i = 0; i < level; i++) cout << "  ";
-    if (gateType == 'O') {
-        if(inv) cout << '!';
-        cout << "PO " << gateID << endl;
-	return;
-    } else if (gateType == 'A') {
-        if(inv) cout << '!';
-        cout << "AIG " << gateID;
-        if(visited.find(gateID) != visited.end()){
-            if(level < max_level) cout << " (*)";
-	    cout  << endl;
-            return;
-        }
-        cout << endl;
-    } else if (gateType == 'I') {
-        cout << "PI " << gateID << endl;
-    }
-    
-    if(level < max_level) visited.insert(gateID);
-    vector<int> fouts = cirMgr->fanOuts[gateID];
-    sort(fouts.begin(), fouts.end());
-    for (int outs : fouts) {
-        bool inv = false;
-        if(outs % 2) inv = true;
-        cirMgr->getGate(outs / 2)->Fanout(max_level, level+1, visited, inv);
-    }
-}
-
-void CirGate::reportFanout(int level) {
-    unordered_set<int> visited;
-    this->Fanout(level, 0, visited);
-}
-
-void CirGate::printGate() const {
-    if (gateType == 'I') {
-        cout << "PI  " << gateID;
-        if (symbol != "") cout << ' ' << '(' << symbol << ')';
-        cout << endl;
-        
-    } else if (gateType == 'C') {
-        cout << "CONST0" << endl;
-
-    } else if (gateType == 'A') {
-        cout << "AIG " << gateID << ' ';
-
-	CirGate* left_gate = cirMgr->getGate(left_fanin / 2);
-	CirGate* right_gate = cirMgr->getGate(right_fanin / 2);
-
-        if(left_gate == 0 or left_gate->gateID == -1) cout << '*';
-        else if(left_fanin % 2) cout << '!';
-        cout << left_fanin / 2  << ' ';
-	
-        if(right_gate == 0 or right_gate->gateID == -1) cout << '*';
-        else if(right_fanin % 2) cout << '!';
-        cout << right_fanin / 2<< endl;
-      
-    } else if (gateType == 'O') {
-        cout << "PO  " << gateID << ' ';
-        if(left_fanin % 2) cout << '!';
-        cout << left_fanin / 2;
-        if (symbol != "")
-            cout << " (" << symbol << ')';
-        cout << endl;
-    }
-}
+}*/
