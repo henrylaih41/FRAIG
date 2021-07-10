@@ -2,13 +2,16 @@ REFPKGS  = cmd
 SRCPKGS  = cir sat util
 LIBPKGS  = $(REFPKGS) $(SRCPKGS)
 MAIN     = main
-
+SERVER   = server
 LIBS     = $(addprefix -l, $(LIBPKGS))
 SRCLIBS  = $(addsuffix .a, $(addprefix lib, $(SRCPKGS)))
 
 EXEC     = fraig
+SERVER_EXEC = fraig_server
 
-all: libs main
+server_all: libs server
+
+main_all: libs main
 
 libs:
 	@for pkg in $(SRCPKGS); \
@@ -23,7 +26,12 @@ main:
 	@cd src/$(MAIN); \
 		make -f make.$(MAIN) --no-print-directory INCLIB="$(LIBS)" EXEC=$(EXEC);
 	@ln -fs bin/$(EXEC) .
-#	@strip bin/$(EXEC)
+
+server:
+	@echo "Checking $(SERVER)..."
+	@cd src/$(SERVER); \
+		make -f make.$(SERVER) --no-print-directory INCLIB="$(LIBS)" EXEC=$(SERVER_EXEC);
+	@ln -fs bin/$(SERVER_EXEC) .
 
 clean:
 	@for pkg in $(SRCPKGS); \
@@ -34,10 +42,12 @@ clean:
 	done
 	@echo "Cleaning $(MAIN)..."
 	@cd src/$(MAIN); make -f make.$(MAIN) --no-print-directory clean
+	@echo "Cleaning $(SERVER)..."
+	@cd src/$(SERVER); make -f make.$(SERVER) --no-print-directory clean
 	@echo "Removing $(SRCLIBS)..."
 	@cd lib; rm -f $(SRCLIBS)
-	@echo "Removing $(EXEC)..."
-	@rm -f bin/$(EXEC)
+	@echo "Removing $(EXEC), $(SERVER_EXEC)..."
+	@rm -f bin/$(EXEC) bin/$(SERVER_EXEC)
 
 cleanall: clean
 	@echo "Removing bin/*..."
@@ -52,6 +62,8 @@ ctags:
 	done
 	@echo "Tagging $(MAIN)..."
 	@cd src; ctags -a $(MAIN)/*.cpp $(MAIN)/*.h
+	@echo "Tagging $(SERVER)..."
+	@cd src; ctags -a $(SERVER)/*.cpp $(SERVER)/*.h
 
 linux mac:
 	@for pkg in $(REFPKGS); \

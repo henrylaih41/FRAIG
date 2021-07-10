@@ -1,0 +1,16 @@
+PKGFLAG   =
+EXTHDRS   = 
+JSON_LIBNAME = -ljsoncpp -lmicrohttpd -ljsonrpccpp-common -ljsonrpccpp-server
+JSON_LIBDIR = /usr/lib/x86_64-linux-gnu/
+include ../Makefile.in
+
+BINDIR    = ../../bin
+TARGET    = $(BINDIR)/$(EXEC)
+
+target: $(TARGET)
+  
+$(TARGET): $(COBJS) $(LIBDEPEND)
+	@echo "> building $(SERVER_EXEC)... LIBDIR: $(LIBDIR)"
+	@echo "$(CXX) $(CFLAGS)  -I$(EXTINCDIR) $(COBJS) -L$(LIBDIR) -L$(JSON_LIBDIR) $(JSON_LIBNAME) $(INCLIB) -o $@"
+	@$(CXX) $(CFLAGS)  -I$(EXTINCDIR) $(COBJS) -L$(LIBDIR) -L$(JSON_LIBDIR) $(JSON_LIBNAME) $(INCLIB) -o $@
+
