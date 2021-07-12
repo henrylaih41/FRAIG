@@ -1,63 +1,74 @@
 #include <iostream>
-#include <jsonrpccpp/server.h>
-#include <jsonrpccpp/server/connectors/httpserver.h>
+#include "server.h"
+#include "../cir/cirMgr.h"
 #include <stdio.h>
 #include <string>
-#include "util.h"
-#include "cmdParser.h"
-
-using namespace jsonrpc;
-using namespace std;
+#define SERVER_PORT 9123
 
 // Global varialbe resposible for command parsering
-CmdParser* cmdMgr = new CmdParser("fraig> ");
-// Global variable that contains the whole graph and operations functions.
-// allocated in CirReadCmd::exec(const string& option) in cirCmd.cpp
+extern CirMgr* cirMgr;
+static CirCmdState curCmd = CIRINIT;
 
-extern bool initCommonCmd();
-extern bool initCirCmd();
+void FraigServer::readFile(const Json::Value &request, Json::Value &response){
+    bool doReplace = false;
+    string fileName = request["name"].asString();
+    cout << "Reading File " << fileName << endl;
+    if (cirMgr != 0) {
+        if (doReplace) {
+            cerr << "Note: original circuit is replaced..." << endl;
+            curCmd = CIRINIT;
+            cirMgr->reset();
+        }
+        else {
+            cerr << "Error: circuit already exists!!" << endl;
+            return;
+        }
+    }
+    else cirMgr = new CirMgr();
 
-class FraigServer: public AbstractServer<FraigServer> {
-public:
-  FraigServer(HttpServer &server) : AbstractServer<FraigServer>(server) {
-    this->bindAndAddMethod(Procedure("sayHello", PARAMS_BY_NAME, JSON_STRING,
-				     "name", JSON_STRING, NULL),
-			   &FraigServer::sayHello);
-    this->bindAndAddNotification(
-	Procedure("notifyServer", PARAMS_BY_NAME, NULL),
-	&FraigServer::notifyServer);
-    this->bindAndAddMethod(Procedure("getObj", PARAMS_BY_NAME, JSON_STRING,
-				     "name", JSON_STRING, NULL),
-			   &FraigServer::getObj);
-  }
+    if (cirMgr->readCircuit(fileName)) {
+        cout << "Failed to read file: " << fileName << endl;
+        curCmd = CIRINIT;
+        delete cirMgr; cirMgr = 0;
+        return;
+    }
 
-  // method
-  void sayHello(const Json::Value &request, Json::Value &response) {
+    curCmd = CIRREAD;
+
+}
+
+void FraigServer::getCircuit(const Json::Value &request, Json::Value &response){
+    if(cirMgr == 0){
+        cout << "cir not init!" << endl;
+        return;
+    }
+    stringstream ss;
+    cirMgr->writeAag(ss);
+    response["payload"] = ss.str();
+}
+// Server procedure calls
+void FraigServer::sayHello(const Json::Value &request, Json::Value &response) {
     response = "Hello: " + request["name"].asString();
-  }
+}
 
-  // transfer object
-  void getObj(const Json::Value &request, Json::Value &response){
-      response["gate"] = 1;
-      response["name"] = "Henry";
-  }
+void FraigServer::getObj(const Json::Value &request, Json::Value &response){
+  response["gate"] = 1;
+  response["name"] = "Henry";
+}
 
-  // notification
-  void notifyServer(const Json::Value &request) {
+// notification
+void FraigServer::notifyServer(const Json::Value &request) {
     (void)request;
     cout << "server received some Notification" << endl;
-  }
-};
-
-static void
-usage()
-{
-   cout << "Usage: cirTest [ -File < doFile > ]" << endl;
 }
 
 static void
-myexit()
-{
+usage(){
+    cout << "Usage: ./server" << endl;
+}
+
+static void
+myexit(){
    usage();
    exit(-1);
 }
@@ -65,10 +76,14 @@ myexit()
 int
 main(int argc, char **argv)
 {
-    myUsage.reset();
+    if (argc != 1) {
+      cerr << "Error: illegal number of argument (" << argc << ")!!\n";
+      myexit();
+   }
+
     cout << "Server Starting!" << endl;
     try {
-        HttpServer server(9123);
+        HttpServer server(SERVER_PORT);
         FraigServer serv(server);
         if (serv.StartListening()) {
             cout << "Server started successfully" << endl;
@@ -82,4 +97,6 @@ main(int argc, char **argv)
     catch (jsonrpc::JsonRpcException &e) {
         cerr << e.what() << endl;
     }
+
+   return 0;
 }

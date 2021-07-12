@@ -333,7 +333,7 @@ void CirMgr::printFloatGates() const {
         cout << "Gates defined but not used  :" << uss.str() << endl;
 }
 
-void CirMgr::writeAag(ostream& outfile) {
+void CirMgr::writeAag(stringstream& outfile) {
 
     outfile << "aag " << GateNum - outputID.size() << ' ' << inputID.size()
             << ' ' << 0 << ' ' << outputID.size() << ' ' << dfsList.size() << '\n';
@@ -345,7 +345,7 @@ void CirMgr::writeAag(ostream& outfile) {
         outfile << allGates[i].left_fanin << '\n';
 
     for (auto i : dfsList)
-        cout << i * 2 << ' ' << allGates[i].left_fanin << ' ' << allGates[i].right_fanin << endl;
+        outfile << i * 2 << ' ' << allGates[i].left_fanin << ' ' << allGates[i].right_fanin << endl;
 
     for (size_t i = 0; i < inputID.size(); i++) {
         if (allGates[inputID[i]].symbol != "")

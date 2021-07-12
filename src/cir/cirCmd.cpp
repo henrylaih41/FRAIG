@@ -509,7 +509,9 @@ CirWriteCmd::exec(const string& option)
    CmdExec::lexOptions(option, options);
 
    if (options.empty()) {
-      cirMgr->writeAag(cout);
+      stringstream ss; 
+      cirMgr->writeAag(ss);
+      cout << ss.str();
       return CMD_EXEC_DONE;
    }
    bool hasFile = false;
@@ -545,7 +547,9 @@ CirWriteCmd::exec(const string& option)
 
    if (!thisGate) {
       assert (hasFile);
-      cirMgr->writeAag(outfile);
+      stringstream ss; 
+      cirMgr->writeAag(ss);
+      outfile << ss.str();
    }
    else if(hasFile) cout << "Implement cirMgr->writeGate!!!\n";
    else

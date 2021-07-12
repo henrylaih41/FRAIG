@@ -54,7 +54,7 @@ class CirMgr {
     void printPOs() const;
     void printFloatGates() const;
     void printFECPairs() const;
-    void writeAag(ostream &);
+    void writeAag(stringstream &);
     void writeGate(ostream &, CirGate *) const;
     void dfs(size_t, int *, int&, int init_run = 0, ostream& out = cout);
     
