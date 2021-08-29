@@ -10,24 +10,24 @@ extern CirMgr* cirMgr;
 static CirCmdState curCmd = CIRINIT;
 
 void FraigServer::readFile(const Json::Value &request, Json::Value &response){
-    bool doReplace = false;
-    string fileName = request["name"].asString();
+    bool doReplace = request["-r"].asBool();
+    string fileName = request["fileName"].asString();
     cout << "Reading File " << fileName << endl;
     if (cirMgr != 0) {
         if (doReplace) {
-            cerr << "Note: original circuit is replaced..." << endl;
+            error(response, "Note: original circuit is replaced...");
             curCmd = CIRINIT;
             cirMgr->reset();
         }
         else {
-            cerr << "Error: circuit already exists!!" << endl;
+            error(response, "Error: circuit already exists!!");
             return;
         }
     }
     else cirMgr = new CirMgr();
 
     if (cirMgr->readCircuit(fileName)) {
-        cout << "Failed to read file: " << fileName << endl;
+        error(response, "Failed to read file: " + fileName);
         curCmd = CIRINIT;
         delete cirMgr; cirMgr = 0;
         return;
@@ -39,7 +39,8 @@ void FraigServer::readFile(const Json::Value &request, Json::Value &response){
 
 void FraigServer::getCircuit(const Json::Value &request, Json::Value &response){
     if(cirMgr == 0){
-        cout << "cir not init!" << endl;
+        cerr << "cir not init!" << endl;
+
         return;
     }
     stringstream ss;
@@ -60,6 +61,11 @@ void FraigServer::getObj(const Json::Value &request, Json::Value &response){
 void FraigServer::notifyServer(const Json::Value &request) {
     (void)request;
     cout << "server received some Notification" << endl;
+}
+
+void FraigServer::error(Json::Value &response, string error_msg){
+    cerr << error_msg << endl;
+    response["error"] = error_msg;
 }
 
 static void

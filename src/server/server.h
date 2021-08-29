@@ -12,7 +12,7 @@ class FraigServer: public AbstractServer<FraigServer> {
     FraigServer(HttpServer &server) : AbstractServer<FraigServer>(server) {
     this->bindAndAddMethod(
             Procedure("cirread", PARAMS_BY_NAME, JSON_STRING,
-                      "name", JSON_STRING, NULL), &FraigServer::readFile);
+                      "fileName", JSON_STRING, "-r", JSON_BOOLEAN, NULL), &FraigServer::readFile);
 
     this->bindAndAddNotification(
             Procedure("notifyServer", PARAMS_BY_NAME, NULL),
@@ -33,6 +33,7 @@ class FraigServer: public AbstractServer<FraigServer> {
 
     // notification
     void notifyServer(const Json::Value &request);
+    void error(Json::Value &repsonse, string error_msg);
 };
 
 enum CirCmdState
